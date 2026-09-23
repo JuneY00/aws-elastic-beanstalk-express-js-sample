@@ -64,10 +64,7 @@ pipeline{
                     )
                 ]){
                     sh '''
-                        echo "$DOCKERHUB_TOKEN" | docker login\ 
-                        -u "$DOCKERHUB_USERNAME" \
-                        --password-stdin
-
+                        echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
                         docker push "${IMAGE_NAME}:${IMAGE_TAG}"
                         docker push "${IMAGE_NAME}:latest"
 
