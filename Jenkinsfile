@@ -1,16 +1,15 @@
-
-pipeline{
+pipeline {
     agent any
 
-    environment{
+    environment {
         IMAGE_NAME = 'juneyoo/isec6000-node-app'
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
-        stage("Install Dependencies"){
+        stage('Install Dependencies') {
             agent {
-                docker{
+                docker {
                     image 'node:16'
                     args '-u node'
                 }
@@ -21,44 +20,45 @@ pipeline{
             }
         }
 
-        stage('Unit Test'){
+        stage('Unit Test') {
             agent {
-                docker{
+                docker {
                     image 'node:16'
                     args '-u node'
                 }
             }
+
             steps {
                 sh 'npm test'
             }
-
         }
 
-        stage('Security Scan'){
+        stage('Security Scan') {
             agent {
-                docker{
+                docker {
                     image 'node:16'
                     args '-u node'
                 }
             }
-            steps {
-                set +e
-                sh 'npm audit --audit-level=high' > npm-audit.txt 2>&1 
-                AUDIT_STATUS=$?
-                cat npm-audit.txt
-                exit $AUDIT_STAT
-            }
 
+            steps {
+                sh '''
+                    set +e
+                    npm audit --audit-level=high > npm-audit.txt 2>&1
+                    AUDIT_STATUS=$?
+                    cat npm-audit.txt
+                    exit $AUDIT_STATUS
+                '''
+            }
         }
-        
-        stage('Build Docker Image'){
+
+        stage('Build Docker Image') {
             steps {
                 sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .'
             }
-
         }
 
-        stage('Push Docker Image'){
+        stage('Push Docker Image') {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -66,9 +66,10 @@ pipeline{
                         usernameVariable: 'DOCKERHUB_USERNAME',
                         passwordVariable: 'DOCKERHUB_TOKEN'
                     )
-                ]){
+                ]) {
                     sh '''
                         echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
                         docker push "${IMAGE_NAME}:${IMAGE_TAG}"
                         docker push "${IMAGE_NAME}:latest"
 
@@ -76,8 +77,13 @@ pipeline{
                     '''
                 }
             }
-
         }
     }
 
+    post {
+        always {
+            archiveArtifacts artifacts: 'npm-audit.txt',
+                             allowEmptyArchive: true
+        }
+    }
 }
