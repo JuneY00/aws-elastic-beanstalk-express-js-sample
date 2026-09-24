@@ -42,7 +42,11 @@ pipeline{
                 }
             }
             steps {
-                sh 'npm audit --audit-level=high'
+                set +e
+                sh 'npm audit --audit-level=high' > npm-audit.txt 2>&1 
+                AUDIT_STATUS=$?
+                cat npm-audit.txt
+                exit $AUDIT_STAT
             }
 
         }
