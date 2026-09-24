@@ -50,6 +50,13 @@ pipeline {
                     exit $AUDIT_STATUS
                 '''
             }
+
+            post {
+                always {
+                    archiveArtifacts artifacts: 'npm-audit.txt',
+                                    allowEmptyArchive: true
+                }
+            }
         }
 
         stage('Build Docker Image') {
@@ -77,13 +84,6 @@ pipeline {
                     '''
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            archiveArtifacts artifacts: 'npm-audit.txt',
-                             allowEmptyArchive: true
         }
     }
 }
